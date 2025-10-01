@@ -1,2 +1,10 @@
 .venv\Scripts\activate
 server\config\config\settings.py
+.vscode/settings.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
