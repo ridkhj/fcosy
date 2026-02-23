@@ -4,7 +4,12 @@ server\config\config\settings.py
 
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 
+# SQLIte
+db.sqlite3
+
+# Django
+*.log
