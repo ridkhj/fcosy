@@ -2,7 +2,6 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth.models import User
-from django.contrib.auth.models import User
 from .models import Perfil
 
 class RegistroTestCase(APITestCase):
@@ -27,7 +26,7 @@ class RegistroTestCase(APITestCase):
         self.assertEqual(Perfil.objects.count(), 1)
 
 
-    def teste_idade_invalida(self):
+    def test_idade_invalida(self):
         data = self.valid_data.copy()
         data["idade"] = -1
 
@@ -51,7 +50,7 @@ class RegistroTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_username_dublicado(self):
+    def test_username_duplicado(self):
         self.client.post(self.url, self.valid_data, format='json')
         response = self.client.post(self.url, self.valid_data, format='json')   
 
