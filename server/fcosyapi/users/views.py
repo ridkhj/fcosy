@@ -13,7 +13,7 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_querryset(self):
+    def get_queryset(self):
         return self.queryset.filter(id=self.request.user.id)
 
 class UserDetailView(generics.RetrieveAPIView):
