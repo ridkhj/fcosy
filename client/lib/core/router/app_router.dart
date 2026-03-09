@@ -3,6 +3,7 @@ import 'package:client/state/auth_notifier.dart';
 import 'package:client/ui/screens/login_screen.dart';
 import 'package:client/ui/screens/register_screen.dart';
 import 'package:client/ui/screens/home_screen.dart';
+import 'package:client/ui/screens/add_transaction_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
@@ -23,5 +24,9 @@ final appRouter = GoRouter(
       builder: (context, state) => const RegisterScreen(),
     ),
     GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+    GoRoute(
+      path: '/add-transaction',
+      builder: (context, state) => const AddTransactionScreen(),
+    ),
   ],
 );
