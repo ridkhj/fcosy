@@ -1,35 +1,54 @@
+import 'package:client/core/utils/api_format.dart';
+
 class TransactionModel {
   final int? id;
+  final int? conta;
   final String tipo;
+  final String? status;
   final double valor;
   final String descricao;
-  final DateTime data;
+  final DateTime dataTransacao;
+  final DateTime? criadoEm;
 
   TransactionModel({
     this.id,
+    this.conta,
     required this.tipo,
+    this.status,
     required this.valor,
     required this.descricao,
-    required this.data,
+    required this.dataTransacao,
+    this.criadoEm,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
       id: json['id'] as int?,
+      conta: json['conta'] as int?,
       tipo: json['tipo'] as String,
-      valor: double.parse(json['valor'].toString()),
+      status: json['status'] as String?,
+      valor: ApiFormat.parseDecimal(json['valor'].toString()),
       descricao: json['descricao'] as String? ?? '',
-      data: DateTime.parse(json['data'] as String),
+      dataTransacao: DateTime.parse(json['data_transacao'] as String),
+      criadoEm: json['criado_em'] != null
+          ? DateTime.parse(json['criado_em'] as String)
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final json = <String, dynamic>{
       'tipo': tipo,
-      'valor': valor.toStringAsFixed(2),
+      if (status != null) 'status': status,
+      'valor': ApiFormat.formatDecimal(valor),
       'descricao': descricao,
-      'data':
-          '${data.year.toString().padLeft(4, '0')}-${data.month.toString().padLeft(2, '0')}-${data.day.toString().padLeft(2, '0')}',
+      'data_transacao': ApiFormat.formatDate(dataTransacao),
     };
+
+    if (conta != null) {
+      json['conta'] = conta;
+    }
+
+    return json;
   }
 }

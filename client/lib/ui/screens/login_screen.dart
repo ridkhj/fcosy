@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:client/data/repositories/auth_repository.dart';
+import 'package:client/state/auth_notifier.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,6 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _usernameController.text.trim(),
         _passwordController.text,
       );
+      await AuthNotifier().bootstrapSession();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(

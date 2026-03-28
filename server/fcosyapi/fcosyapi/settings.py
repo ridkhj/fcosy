@@ -10,22 +10,47 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+SERVER_DIR = BASE_DIR.parent
+
+load_dotenv(SERVER_DIR / ".env")
+
+
+def get_env(name):
+    value = os.getenv(name)
+    if value is None or value == "":
+        raise ImproperlyConfigured(f"The {name} environment variable is required.")
+    return value
+
+
+def get_env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def get_env_list(name, default=""):
+    value = os.getenv(name, default)
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$erv4tg4wcsw5g9!ck24d#bs5)$01g(n_3v&_+a9$@geowj)t='
+SECRET_KEY = get_env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = get_env_bool("DEBUG", default=False)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = get_env_list("ALLOWED_HOSTS", default="127.0.0.1,localhost")
 
 
 # Application definition
@@ -42,6 +67,7 @@ INSTALLED_APPS = [
 
     "users",
     "transactions",
+    "accounts",
 ]
 
 MIDDLEWARE = [
