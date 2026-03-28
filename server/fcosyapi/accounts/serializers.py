@@ -58,7 +58,7 @@ class ContaDetailSerializer(serializers.ModelSerializer):
         return self.context["month_reference"]
 
     def get_saldo_mes(self, obj):
-        saldo_mes = self._get_month_transactions(obj).aggregate(
+        saldo_mes = self._get_month_transactions(obj).filter(status="realizada").aggregate(
             total=Coalesce(
                 Sum(
                     Case(

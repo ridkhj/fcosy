@@ -11,15 +11,23 @@ class Transacao(models.Model):
         ('despesa', 'Despesa'),
     )
 
+    STATUS = (
+        ('pendente', 'Pendente'),
+        ('realizada', 'Realizada'),
+    )
+
     conta = models.ForeignKey("accounts.Conta", on_delete=models.CASCADE, related_name="transacoes")
     tipo = models.CharField(max_length=10, choices=TIPOS)
+    status = models.CharField(max_length=10, choices=STATUS, default="realizada")
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     descricao = models.CharField(max_length=255)
     data_transacao = models.DateField()
     criado_em = models.DateTimeField(auto_now_add=True)
 
     @staticmethod
-    def _signed_amount(tipo, valor):
+    def _signed_amount(tipo, valor, status="realizada"):
+        if status != "realizada":
+            return Decimal("0")
         valor = Decimal(valor)
         if tipo == "ganho":
             return valor
@@ -49,13 +57,14 @@ class Transacao(models.Model):
 
             super().save(*args, **kwargs)
 
-            new_amount = self._signed_amount(self.tipo, self.valor)
+            new_amount = self._signed_amount(self.tipo, self.valor, self.status)
 
             if previous is None:
-                self._adjust_conta_balance(self.conta_id, new_amount)
+                if new_amount != Decimal("0"):
+                    self._adjust_conta_balance(self.conta_id, new_amount)
                 return
 
-            previous_amount = self._signed_amount(previous.tipo, previous.valor)
+            previous_amount = self._signed_amount(previous.tipo, previous.valor, previous.status)
 
             if previous.conta_id == self.conta_id:
                 delta = new_amount - previous_amount
@@ -71,6 +80,7 @@ class Transacao(models.Model):
 
         with transaction.atomic():
             list(Conta.objects.select_for_update().filter(id=self.conta_id))
-            amount = self._signed_amount(self.tipo, self.valor)
-            self._adjust_conta_balance(self.conta_id, -amount)
+            amount = self._signed_amount(self.tipo, self.valor, self.status)
+            if amount != Decimal("0"):
+                self._adjust_conta_balance(self.conta_id, -amount)
             super().delete(*args, **kwargs)

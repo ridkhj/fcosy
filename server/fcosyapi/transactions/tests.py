@@ -37,6 +37,7 @@ class TransacaoTestCase(APITestCase):
         self.valid_data = {
             "conta": self.conta.id,
             "tipo": "ganho",
+            "status": "realizada",
             "valor": 1000,
             "descricao": "salario",
             "data_transacao": "2026-03-08"
@@ -50,6 +51,17 @@ class TransacaoTestCase(APITestCase):
         self.assertEqual(Transacao.objects.count(), 1)
         self.conta.refresh_from_db()
         self.assertEqual(str(self.conta.saldo), "1000.00")
+
+    def test_criar_transacao_pendente_nao_altera_saldo(self):
+
+        data = self.valid_data.copy()
+        data["status"] = "pendente"
+
+        response = self.client.post(self.url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.conta.refresh_from_db()
+        self.assertEqual(str(self.conta.saldo), "0.00")
 
     def test_tipo_invalido(self):
 
@@ -106,6 +118,7 @@ class TransacaoTestCase(APITestCase):
         Transacao.objects.create(
             conta=conta_outro,
             tipo="ganho",
+            status="realizada",
             valor=500,
             descricao="teste",
             data_transacao="2026-03-01"
@@ -131,6 +144,7 @@ class TransacaoTestCase(APITestCase):
         transacao_outro = Transacao.objects.create(
             conta=conta_outro,
             tipo="ganho",
+            status="realizada",
             valor=500,
             descricao="teste",
             data_transacao="2026-03-01"
@@ -141,6 +155,7 @@ class TransacaoTestCase(APITestCase):
             {
                 "conta": conta_outro.id,
                 "tipo": "despesa",
+                "status": "realizada",
                 "valor": 100,
                 "descricao": "alterada",
                 "data_transacao": "2026-03-10"
@@ -166,6 +181,7 @@ class TransacaoTestCase(APITestCase):
         transacao_outro = Transacao.objects.create(
             conta=conta_outro,
             tipo="ganho",
+            status="realizada",
             valor=500,
             descricao="teste",
             data_transacao="2026-03-01"
@@ -197,6 +213,7 @@ class TransacaoTestCase(APITestCase):
         transacao_outro = Transacao.objects.create(
             conta=conta_outro,
             tipo="ganho",
+            status="realizada",
             valor=500,
             descricao="teste",
             data_transacao="2026-03-01"
@@ -212,6 +229,7 @@ class TransacaoTestCase(APITestCase):
         Transacao.objects.create(
             conta=self.conta,
             tipo="ganho",
+            status="realizada",
             valor=100,
             descricao="inicio do mes",
             data_transacao="2026-03-01"
@@ -220,6 +238,7 @@ class TransacaoTestCase(APITestCase):
         Transacao.objects.create(
             conta=self.conta,
             tipo="ganho",
+            status="realizada",
             valor=200,
             descricao="meio do mes",
             data_transacao="2026-03-15"
@@ -241,6 +260,7 @@ class TransacaoTestCase(APITestCase):
         Transacao.objects.create(
             conta=self.conta,
             tipo="ganho",
+            status="realizada",
             valor=100,
             descricao="ganho valido",
             data_transacao="2026-03-15"
@@ -249,6 +269,7 @@ class TransacaoTestCase(APITestCase):
         Transacao.objects.create(
             conta=self.conta,
             tipo="despesa",
+            status="realizada",
             valor=50,
             descricao="tipo diferente",
             data_transacao="2026-03-15"
@@ -257,6 +278,7 @@ class TransacaoTestCase(APITestCase):
         Transacao.objects.create(
             conta=outra_conta,
             tipo="ganho",
+            status="realizada",
             valor=200,
             descricao="conta diferente",
             data_transacao="2026-03-15"
@@ -265,6 +287,7 @@ class TransacaoTestCase(APITestCase):
         Transacao.objects.create(
             conta=self.conta,
             tipo="ganho",
+            status="realizada",
             valor=300,
             descricao="fora do periodo",
             data_transacao="2026-04-10"
@@ -283,6 +306,7 @@ class TransacaoTestCase(APITestCase):
         transacao = Transacao.objects.create(
             conta=self.conta,
             tipo="ganho",
+            status="realizada",
             valor=100,
             descricao="salario",
             data_transacao="2026-03-08"
@@ -293,6 +317,7 @@ class TransacaoTestCase(APITestCase):
             {
                 "conta": self.conta.id,
                 "tipo": "despesa",
+                "status": "realizada",
                 "valor": 40,
                 "descricao": "conta de luz",
                 "data_transacao": "2026-03-09"
@@ -309,6 +334,7 @@ class TransacaoTestCase(APITestCase):
         transacao = Transacao.objects.create(
             conta=self.conta,
             tipo="ganho",
+            status="realizada",
             valor=100,
             descricao="salario",
             data_transacao="2026-03-08"
@@ -331,6 +357,7 @@ class TransacaoTestCase(APITestCase):
         transacao = Transacao.objects.create(
             conta=self.conta,
             tipo="ganho",
+            status="realizada",
             valor=150,
             descricao="aporte",
             data_transacao="2026-03-08"
@@ -349,3 +376,120 @@ class TransacaoTestCase(APITestCase):
         outra_conta.refresh_from_db()
         self.assertEqual(str(self.conta.saldo), "0.00")
         self.assertEqual(str(outra_conta.saldo), "150.00")
+
+    def test_atualizar_status_de_pendente_para_realizada_aplica_saldo(self):
+
+        transacao = Transacao.objects.create(
+            conta=self.conta,
+            tipo="ganho",
+            status="pendente",
+            valor=90,
+            descricao="recebimento aguardando",
+            data_transacao="2026-03-08"
+        )
+
+        response = self.client.patch(
+            f"{self.url}{transacao.id}/",
+            {
+                "status": "realizada"
+            },
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.conta.refresh_from_db()
+        self.assertEqual(str(self.conta.saldo), "90.00")
+
+    def test_atualizar_status_de_realizada_para_pendente_remove_saldo(self):
+
+        transacao = Transacao.objects.create(
+            conta=self.conta,
+            tipo="ganho",
+            status="realizada",
+            valor=90,
+            descricao="recebimento",
+            data_transacao="2026-03-08"
+        )
+
+        response = self.client.patch(
+            f"{self.url}{transacao.id}/",
+            {
+                "status": "pendente"
+            },
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.conta.refresh_from_db()
+        self.assertEqual(str(self.conta.saldo), "0.00")
+
+    def test_atualizar_pendente_para_pendente_nao_altera_saldo(self):
+
+        transacao = Transacao.objects.create(
+            conta=self.conta,
+            tipo="ganho",
+            status="pendente",
+            valor=90,
+            descricao="recebimento futuro",
+            data_transacao="2026-03-08"
+        )
+
+        response = self.client.patch(
+            f"{self.url}{transacao.id}/",
+            {
+                "descricao": "recebimento ainda futuro"
+            },
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.conta.refresh_from_db()
+        self.assertEqual(str(self.conta.saldo), "0.00")
+
+    def test_remover_transacao_pendente_nao_altera_saldo(self):
+
+        transacao = Transacao.objects.create(
+            conta=self.conta,
+            tipo="ganho",
+            status="pendente",
+            valor=100,
+            descricao="salario",
+            data_transacao="2026-03-08"
+        )
+
+        response = self.client.delete(f"{self.url}{transacao.id}/")
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.conta.refresh_from_db()
+        self.assertEqual(str(self.conta.saldo), "0.00")
+
+    def test_mover_transacao_pendente_para_outra_conta_nao_altera_saldos(self):
+
+        outra_conta = Conta.objects.create(
+            usuario=self.user,
+            nome="Conta Investimento",
+            tipo="investimento"
+        )
+
+        transacao = Transacao.objects.create(
+            conta=self.conta,
+            tipo="ganho",
+            status="pendente",
+            valor=150,
+            descricao="aporte futuro",
+            data_transacao="2026-03-08"
+        )
+
+        response = self.client.patch(
+            f"{self.url}{transacao.id}/",
+            {
+                "conta": outra_conta.id
+            },
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.conta.refresh_from_db()
+        outra_conta.refresh_from_db()
+        self.assertEqual(str(self.conta.saldo), "0.00")
+        self.assertEqual(str(outra_conta.saldo), "0.00")

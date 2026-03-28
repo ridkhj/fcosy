@@ -10,6 +10,7 @@ class TransacaoSerializer(serializers.ModelSerializer):
             "id",
             "conta",
             "tipo",
+            "status",
             "valor",
             "descricao",
             "data_transacao",
