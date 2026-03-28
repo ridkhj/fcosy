@@ -23,7 +23,15 @@ class ContaListSerializer(serializers.ModelSerializer):
 class TransacaoMesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transacao
-        fields = ["id", "tipo", "valor", "descricao", "data_transacao", "criado_em"]
+        fields = [
+            "id",
+            "tipo",
+            "status",
+            "valor",
+            "descricao",
+            "data_transacao",
+            "criado_em",
+        ]
         read_only_fields = fields
 
 

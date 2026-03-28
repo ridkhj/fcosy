@@ -166,6 +166,31 @@ class ContaTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["saldo_mes"], Decimal("100"))
         self.assertEqual(len(response.data["transacoes_mes"]), 2)
+        self.assertEqual(response.data["transacoes_mes"][0]["status"], "pendente")
+        self.assertEqual(response.data["transacoes_mes"][1]["status"], "realizada")
+
+    def test_detalhar_conta_retorna_status_das_transacoes_do_mes(self):
+
+        conta = Conta.objects.create(
+            usuario=self.user,
+            nome="Conta Corrente",
+            tipo="corrente"
+        )
+
+        Transacao.objects.create(
+            conta=conta,
+            tipo="ganho",
+            status="realizada",
+            valor="250.00",
+            descricao="pix recebido",
+            data_transacao=f"{self.current_month}-12"
+        )
+
+        response = self.client.get(f"{self.url}{conta.id}/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["saldo"], "250.00")
+        self.assertEqual(response.data["transacoes_mes"][0]["status"], "realizada")
 
     def test_detalhar_conta_com_mes_invalido_retorna_400(self):
 
