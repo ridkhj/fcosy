@@ -1,8 +1,8 @@
-from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth.models import User
 from .models import Perfil
+
 
 class RegistroTestCase(APITestCase):
     def setUp(self):
@@ -52,6 +52,102 @@ class RegistroTestCase(APITestCase):
 
     def test_username_duplicado(self):
         self.client.post(self.url, self.valid_data, format='json')
-        response = self.client.post(self.url, self.valid_data, format='json')   
+        response = self.client.post(self.url, self.valid_data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class UserMeViewTestCase(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="userme",
+            email="userme@example.com",
+            password="123456"
+        )
+
+        Perfil.objects.create(
+            user=self.user,
+            primeiro_nome="User",
+            sobrenome="Me",
+            idade=25,
+            numero="+5511987654321"
+        )
+
+        self.other_user = User.objects.create_user(
+            username="otheruser",
+            email="other@example.com",
+            password="123456"
+        )
+
+        Perfil.objects.create(
+            user=self.other_user,
+            primeiro_nome="Other",
+            sobrenome="User",
+            idade=30,
+            numero="+5511987654322"
+        )
+
+        login = self.client.post("/api/login/", {
+            "username": "userme",
+            "password": "123456"
+        })
+
+        token = login.data["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    def test_retorna_usuario_autenticado_em_users_me(self):
+        response = self.client.get("/api/users/me/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], self.user.id)
+        self.assertEqual(response.data["username"], self.user.username)
+
+    def test_rota_users_nao_existe_mais(self):
+        response = self.client.get("/api/users/")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_rota_antiga_por_pk_nao_existe_mais(self):
+        response = self.client.get(f"/api/users/{self.other_user.id}/")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class TokenRefreshViewTestCase(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="refreshuser",
+            email="refresh@example.com",
+            password="123456"
+        )
+
+        Perfil.objects.create(
+            user=self.user,
+            primeiro_nome="Refresh",
+            sobrenome="User",
+            idade=26,
+            numero="+5511987654333"
+        )
+
+        login = self.client.post("/api/login/", {
+            "username": "refreshuser",
+            "password": "123456"
+        })
+
+        self.access = login.data["access"]
+        self.refresh = login.data["refresh"]
+
+    def test_refresh_valido_retorna_novo_access(self):
+        response = self.client.post("/api/refresh/", {
+            "refresh": self.refresh
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+
+    def test_refresh_invalido_retorna_erro(self):
+        response = self.client.post("/api/refresh/", {
+            "refresh": "token-invalido"
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

@@ -159,8 +159,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Campo obrigatório';
-                  if (v.length != 11)
+                  if (v.length != 11) {
                     return 'Formato: DDD + 9 dígitos (11 números)';
+                  }
                   return null;
                 },
               ),
