@@ -6,8 +6,16 @@ class TransacaoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transacao
-        fields = "__all__"
-        read_only_fields = ["criado_em"]
+        fields = [
+            "id",
+            "conta",
+            "tipo",
+            "valor",
+            "descricao",
+            "data_transacao",
+            "criado_em",
+        ]
+        read_only_fields = ["id", "criado_em"]
 
     def validate_valor(self, value):
         if value <= 0:
