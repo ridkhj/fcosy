@@ -106,3 +106,43 @@ class UserMeViewTestCase(APITestCase):
         response = self.client.get(f"/api/users/{self.other_user.id}/")
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class TokenRefreshViewTestCase(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="refreshuser",
+            email="refresh@example.com",
+            password="123456"
+        )
+
+        Perfil.objects.create(
+            user=self.user,
+            primeiro_nome="Refresh",
+            sobrenome="User",
+            idade=26,
+            numero="+5511987654333"
+        )
+
+        login = self.client.post("/api/login/", {
+            "username": "refreshuser",
+            "password": "123456"
+        })
+
+        self.access = login.data["access"]
+        self.refresh = login.data["refresh"]
+
+    def test_refresh_valido_retorna_novo_access(self):
+        response = self.client.post("/api/refresh/", {
+            "refresh": self.refresh
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+
+    def test_refresh_invalido_retorna_erro(self):
+        response = self.client.post("/api/refresh/", {
+            "refresh": "token-invalido"
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
