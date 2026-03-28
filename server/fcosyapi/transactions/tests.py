@@ -66,7 +66,28 @@ class TransacaoTestCase(APITestCase):
         response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-    
+
+    def test_usuario_nao_cria_transacao_em_conta_de_outro(self):
+
+        outro = User.objects.create_user(
+            username="terceiro",
+            password="123456"
+        )
+
+        conta_outro = Conta.objects.create(
+            usuario=outro,
+            nome="Conta de Outro",
+            tipo="corrente"
+        )
+
+        data = self.valid_data.copy()
+        data["conta"] = conta_outro.id
+
+        response = self.client.post(self.url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Transacao.objects.count(), 0)
+
     def test_usuario_nao_acessa_transacao_de_outro(self):
 
         outro = User.objects.create_user(
@@ -91,3 +112,26 @@ class TransacaoTestCase(APITestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(len(response.data), 0)
+
+    def test_filtra_transacoes_por_periodo(self):
+
+        Transacao.objects.create(
+            conta=self.conta,
+            tipo="ganho",
+            valor=100,
+            descricao="inicio do mes",
+            data_transacao="2026-03-01"
+        )
+
+        Transacao.objects.create(
+            conta=self.conta,
+            tipo="ganho",
+            valor=200,
+            descricao="meio do mes",
+            data_transacao="2026-03-15"
+        )
+
+        response = self.client.get(f"{self.url}?data_inicio=2026-03-10&data_fim=2026-03-31")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
