@@ -102,6 +102,11 @@ class UserMeViewTestCase(APITestCase):
         self.assertEqual(response.data["id"], self.user.id)
         self.assertEqual(response.data["username"], self.user.username)
 
+    def test_rota_users_nao_existe_mais(self):
+        response = self.client.get("/api/users/")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_rota_antiga_por_pk_nao_existe_mais(self):
         response = self.client.get(f"/api/users/{self.other_user.id}/")
 
